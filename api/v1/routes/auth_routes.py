@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from schemas.auth_schemas import GoogleSignInRequest, SignInRequest, RefreshToken, Token, PasswordResetRequest
-from schemas.user_schemas import UserCreateSchema
+from schemas.user_schemas import UserCreate
 from core.config import get_secret
 from database.models.users_model import User
 from database.session import get_db  # Para interactuar con la base de datos
@@ -13,7 +13,7 @@ from utils.email_utils import send_email
 from core.auth import (create_access_token, create_refresh_token, decode_refresh_token, hash_password, 
                        verify_password, create_password_reset_token, verify_password_reset_token)
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 GOOGLE_CLIENT_ID = get_secret("GOOGLE_CLIENT_ID")
 
@@ -45,7 +45,7 @@ def sign_in(data: SignInRequest, db: Session = Depends(get_db)):
 
 # Endpoint para registrar un nuevo usuario
 @router.post("/signUp", response_model=Token)
-def sign_up(user_data: UserCreateSchema, db: Session = Depends(get_db)):
+def sign_up(user_data: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_data.email).first()
     if user:
         raise HTTPException(

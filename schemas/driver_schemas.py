@@ -1,21 +1,17 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, HttpUrl
 from typing import Optional
-from user_schemas import UserReadSchema
 
-# Esquema base para Driver (común entre lectura y escritura)
-class DriverBaseSchema(BaseModel):
+
+# Esquemas de Driver
+class DriverBase(BaseModel):
     vehicle_type: str
     license_number: str
     is_available: Optional[bool] = True
+    license_image: Optional[HttpUrl] = None  # Imagen de la licencia del conductor
 
-# Esquema para crear un Driver
-class DriverCreateSchema(DriverBaseSchema):
-    pass
-
-# Esquema para leer un Driver (incluye relación con el usuario)
-class DriverReadSchema(DriverBaseSchema):
+class DriverResponse(DriverBase):
     id: UUID4
-    user: UserReadSchema
+    user_id: UUID4
 
     class Config:
         from_attributes = True

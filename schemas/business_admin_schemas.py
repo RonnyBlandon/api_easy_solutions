@@ -1,18 +1,14 @@
-from pydantic import BaseModel, UUID4
-from user_schemas import UserReadSchema
+from pydantic import BaseModel, UUID4, HttpUrl
+from typing import Optional
 
-# Esquema base para BusinessAdmin (común entre lectura y escritura)
-class BusinessAdminBaseSchema(BaseModel):
+# Esquemas de BusinessAdmin
+class BusinessAdminBase(BaseModel):
     business_name: str
+    logo_image: Optional[HttpUrl] = None  # Logo del negocio administrado
 
-# Esquema para crear un BusinessAdmin
-class BusinessAdminCreateSchema(BusinessAdminBaseSchema):
-    pass
-
-# Esquema para leer un BusinessAdmin (incluye relación con el usuario)
-class BusinessAdminReadSchema(BusinessAdminBaseSchema):
+class BusinessAdminResponse(BusinessAdminBase):
     id: UUID4
-    user: UserReadSchema
+    user_id: UUID4
 
     class Config:
         from_attributes = True

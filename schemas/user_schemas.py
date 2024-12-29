@@ -1,89 +1,76 @@
-from pydantic import BaseModel, UUID4, EmailStr
+from pydantic import BaseModel, EmailStr, UUID4, HttpUrl
 from typing import Optional, List
 from datetime import datetime
-import enum
+from enum import Enum
+from schemas.business_schemas import BusinessResponse
 
-# Definición del Enum para los roles
-class UserRoleEnum(str, enum.Enum):
+# Enum para los roles de usuario
+class UserRole(str, Enum):
     USER = "USER"
     DRIVER = "DRIVER"
     BUSINESS_ADMIN = "BUSINESS_ADMIN"
 
-# Esquema base de usuarios (común entre lectura y escritura)
-class UserBaseSchema(BaseModel):
+# Esquemas de User
+class UserBase(BaseModel):
     email: EmailStr
     phone_number: str
     full_name: str
-    department_id: int
-    municipality_id: int
-    role: UserRoleEnum
+    role: UserRole
+    google_user_id: Optional[str] = None
     is_active: Optional[bool] = True
+    profile_image: Optional[HttpUrl] = None  # Imagen de perfil del usuario
 
-# Esquema para crear usuarios
-class UserCreateSchema(UserBaseSchema):
-    password: str  # Contraseña sin hash para la creación
+class UserCreate(UserBase):
+    password: str
 
-# Esquema para leer usuarios (incluye relaciones y datos adicionales)
-class UserReadSchema(UserBaseSchema):
+class UserResponse(UserBase):
     id: UUID4
-    department_id: Optional[int]
-    municipality_id: Optional[int]
     created_at: datetime
-
-    class Config:
-        from_attributes = True  # Habilita la conversión desde objetos ORM
-
-# Esquema base para Department
-class DepartmentBaseSchema(BaseModel):
-    name: str
-
-# Esquema para crear un Department
-class DepartmentCreateSchema(DepartmentBaseSchema):
-    pass
-
-# Esquema para leer un Department (incluye usuarios y municipios)
-class DepartmentReadSchema(DepartmentBaseSchema):
-    id: int
-    users: List[UserReadSchema] = []
-    municipalities: List['MunicipalityReadSchema'] = []
+    department_id: Optional[int] = None
+    municipality_id: Optional[int] = None
 
     class Config:
         from_attributes = True
 
-# Esquema base para Municipality
-class MunicipalityBaseSchema(BaseModel):
+# Esquemas de Department
+class DepartmentBase(BaseModel):
+    name: str
+
+class DepartmentResponse(DepartmentBase):
+    id: int
+    users: List[UserResponse] = []
+    businesses: List["BusinessResponse"] = []
+    municipalities: List["MunicipalityResponse"] = []
+
+    class Config:
+        from_attributes = True
+
+# Esquemas de Municipality
+class MunicipalityBase(BaseModel):
     name: str
     department_id: int
 
-# Esquema para crear un Municipality
-class MunicipalityCreateSchema(MunicipalityBaseSchema):
-    pass
-
-# Esquema para leer un Municipality (incluye relaciones con departamentos y usuarios)
-class MunicipalityReadSchema(MunicipalityBaseSchema):
+class MunicipalityResponse(MunicipalityBase):
     id: int
-    department: DepartmentReadSchema
-    users: List[UserReadSchema] = []
+    department: DepartmentResponse
+    users: List[UserResponse] = []
+    addresses: List["AddressResponse"] = []
+    businesses: List["BusinessResponse"] = []
 
     class Config:
         from_attributes = True
 
-# Esquema base para Address
-class AddressBaseSchema(BaseModel):
+# Esquemas de Address
+class AddressBase(BaseModel):
     address_type: str
     street_address: str
     latitude: Optional[str] = None
     longitude: Optional[str] = None
 
-# Esquema para crear una Address
-class AddressCreateSchema(AddressBaseSchema):
-    municipality_id: int
-
-# Esquema para leer una Address (incluye relación con el municipio)
-class AddressReadSchema(AddressBaseSchema):
+class AddressResponse(AddressBase):
     id: int
-    municipality: MunicipalityReadSchema
+    municipality_id: int
+    municipality: MunicipalityResponse
 
     class Config:
         from_attributes = True
-
