@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, Boolean, ForeignKey, Index
+from sqlalchemy import Column, String, Float, Integer, Boolean, ForeignKey , DECIMAL, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -31,7 +31,6 @@ class Business(Base):
     type_business_id = Column(Integer, ForeignKey('type_business.id', ondelete="CASCADE"), nullable=False, index=True)
     address = Column(String, nullable=False)
     admin_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    external_id = Column(UUID(as_uuid=True), nullable=False, unique=True, index=True)  # Renombrado desde business_id
     business_name = Column(String, nullable=False)
     category_id = Column(Integer, nullable=False, index=True)
     department_id = Column(Integer, ForeignKey('departments.id', ondelete="SET NULL"), nullable=True, index=True)
@@ -43,13 +42,13 @@ class Business(Base):
     long = Column(Float, nullable=True)  # Igual que lat
     phone_number = Column(String, nullable=True)
     zip_code = Column(String, nullable=True)
-    status = Column(String, nullable=True)
+    status = Column(Boolean, default=True)
     is_popular_this_week = Column(Boolean, default=False)
     is_novelty = Column(Boolean, default=False)
     has_free_delivery = Column(Boolean, default=False)
     has_alcohol = Column(Boolean, default=False)
     is_open_now = Column(Boolean, default=False)
-    average_price = Column(Float, nullable=True)
+    average_price = Column(DECIMAL(precision=10, scale=2), nullable=True)
     average_delivery = Column(String, nullable=True)
 
     # Relaciones

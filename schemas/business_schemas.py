@@ -39,7 +39,6 @@ class TypeBusinessResponse(TypeBusinessBase):
 class BusinessBase(BaseModel):
     address: str
     admin_id: UUID4
-    external_id: UUID4
     business_name: str
     category_id: int
     department_id: Optional[int]
@@ -51,7 +50,7 @@ class BusinessBase(BaseModel):
     long: Optional[float]
     phone_number: Optional[str]
     zip_code: Optional[str]
-    status: Optional[str]
+    status: bool
     is_popular_this_week: bool
     is_novelty: bool
     has_free_delivery: bool

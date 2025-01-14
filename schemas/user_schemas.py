@@ -16,6 +16,8 @@ class UserBase(BaseModel):
     phone_number: str
     full_name: str
     role: UserRole
+    department_id: int
+    municipality_id: int
     google_user_id: Optional[str] = None
     is_active: Optional[bool] = True
     profile_image: Optional[HttpUrl] = None  # Imagen de perfil del usuario

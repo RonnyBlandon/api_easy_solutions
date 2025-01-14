@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, String, Float, Integer, Boolean, DECIMAL, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -16,6 +16,15 @@ class ProductImage(Base):
     # Relación inversa
     product = relationship("Product", back_populates="images")
 
+# Esta tabla almacenará las relaciones entre categorías y productos.
+category_product_association = Table(
+    'category_product_association',
+    Base.metadata,
+    Column('category_id', Integer, ForeignKey('categories.id', ondelete="CASCADE"), primary_key=True),
+    Column('product_id', UUID(as_uuid=True), ForeignKey('products.id', ondelete="CASCADE"), primary_key=True)
+)
+
+
 # Modelo para las categorías de productos
 class Category(Base):
     __tablename__ = 'categories'
@@ -24,22 +33,36 @@ class Category(Base):
     business_id = Column(UUID(as_uuid=True), ForeignKey('businesses.id', ondelete="CASCADE"), nullable=False)
 
     business = relationship("Business", back_populates="categories")
-    products = relationship("Product", back_populates="category", cascade="all, delete-orphan")
+    products = relationship(
+        "Product",
+        secondary=category_product_association,
+        back_populates="categories"
+    )
+
 
 # Modelo para los productos
 class Product(Base):
     __tablename__ = 'products'
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     product_name = Column(String, nullable=False)
-    product_price = Column(Float, nullable=False)
+    product_price = Column(DECIMAL(precision=10, scale=2), nullable=False)
     product_description = Column(String, nullable=True)
-    amount = Column(Integer, default=0)
-    category_id = Column(Integer, ForeignKey('categories.id', ondelete="CASCADE"), nullable=False)
+    stock = Column(Integer, default=0)
+    available = Column(Boolean, default=True)
+    business_id = Column(UUID(as_uuid=True), ForeignKey('businesses.id', ondelete="CASCADE"), nullable=False)
+    status = Column(Boolean, default=False)
 
+    # Relaciones con otros modelos
     options = relationship("Option", back_populates="product", cascade="all, delete-orphan")
-    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")  # Relación con ProductImage
-    category = relationship("Category", back_populates="products")
+    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     favourites = relationship("Favourite", back_populates="product")
+    categories = relationship(
+        "Category",
+        secondary="category_product_association",
+        back_populates="products"
+    )
+
 
 # Modelo para las opciones de productos
 class Option(Base):
@@ -58,7 +81,7 @@ class Extra(Base):
     __tablename__ = 'extras'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String, nullable=False)
-    price = Column(Float, nullable=False)
+    price = Column(DECIMAL(precision=10, scale=2), nullable=False)
     option_id = Column(UUID(as_uuid=True), ForeignKey('options.id', ondelete="CASCADE"), nullable=False)
 
     option = relationship("Option", back_populates="extras")
