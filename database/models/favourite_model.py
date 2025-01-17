@@ -8,9 +8,9 @@ class Favourite(Base):
     __tablename__ = "favourites"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("auth.users.id"), nullable=False)
-    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id"), nullable=True)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("auth.users.id", ondelete="CASCADE"), nullable=False)
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=True)
 
     # Restricción para evitar que ambos campos sean nulos o ambos tengan datos
     __table_args__ = (

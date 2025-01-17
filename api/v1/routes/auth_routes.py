@@ -7,6 +7,7 @@ from schemas.auth_schemas import GoogleSignInRequest, SignInRequest, RefreshToke
 from schemas.user_schemas import UserCreate
 from core.config import get_secret
 from database.models.users_model import User
+from database.models.cart_model import Cart
 from database.session import get_db  # Para interactuar con la base de datos
 from sqlalchemy.orm import Session
 from utils.email_utils import send_email
@@ -73,6 +74,14 @@ def sign_up(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Crear carrito al usuario
+    if not new_user.cart:
+        # Crear carrito si no existe
+        new_cart = Cart(user_id=new_user.id)
+        db.add(new_cart)
+        db.commit()
+        db.refresh(new_cart)
 
     access_token = create_access_token(data={"id": str(new_user.id), "role": str(new_user.role)})
     refresh_token = create_refresh_token(data={"id": str(new_user.id), "role": str(new_user.role)})
@@ -193,7 +202,6 @@ def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
     google_user_id = user_info["sub"]
     email = user_info["email"]
     name = user_info.get("name", "Usuario de Google")
-    print("Esto contiene user_info: ", user_info)
 
     # Verificar si el usuario ya existe en la base de datos
     user = db.query(User).filter(User.email == email).first()
@@ -218,6 +226,14 @@ def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        # Crear carrito al usuario
+        if not user.cart:
+            # Crear carrito si no existe
+            new_cart = Cart(user_id=user.id)
+            db.add(new_cart)
+            db.commit()
+            db.refresh(new_cart)
 
     # Crear tokens de acceso y actualización para el usuario
     access_token = create_access_token(data={"id": str(user.id), "role": str(user.role)})

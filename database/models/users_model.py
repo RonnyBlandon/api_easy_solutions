@@ -36,12 +36,13 @@ class User(Base):
     favourites = relationship("Favourite", back_populates="user")
     department = relationship("Department", back_populates="users")
     municipality = relationship("Municipality", back_populates="users")
+    cart = relationship("Cart", back_populates="user")
 
 # Tabla para drivers (conductores)
 class Driver(Base):
     __tablename__ = 'drivers'
 
-    id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'), primary_key=True)
+    id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id', ondelete="CASCADE"), primary_key=True)
     vehicle_type = Column(String, nullable=False)
     license_number = Column(String, nullable=False)
     license_image = Column(String, nullable=True)  # URL de la imagen de la licencia
@@ -54,7 +55,7 @@ class Driver(Base):
 class BusinessAdmin(Base):
     __tablename__ = 'business_admins'
 
-    id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'), primary_key=True)
+    id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id', ondelete="CASCADE"), primary_key=True)
     business_name = Column(String, nullable=False)
     logo_image = Column(String, nullable=True)  # URL del logo del negocio
 
@@ -79,7 +80,7 @@ class Municipality(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    department_id = Column(Integer, ForeignKey('departments.id'))
+    department_id = Column(Integer, ForeignKey('departments.id', ondelete="CASCADE"))
 
     # Relaciones con departamento y usuarios
     department = relationship("Department", back_populates="municipalities")
@@ -98,5 +99,5 @@ class Address(Base):
     longitude = Column(String, nullable=True)  # Longitud para Google Maps
 
     # Relaciones con municipios
-    municipality_id = Column(Integer, ForeignKey('municipalities.id'))
+    municipality_id = Column(Integer, ForeignKey('municipalities.id', ondelete="CASCADE"))
     municipality = relationship("Municipality", back_populates="addresses")

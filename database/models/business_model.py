@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, Boolean, ForeignKey , DECIMAL, Index
+from sqlalchemy import Column, String, Float, Integer, Boolean, ForeignKey , Numeric, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -48,7 +48,7 @@ class Business(Base):
     has_free_delivery = Column(Boolean, default=False)
     has_alcohol = Column(Boolean, default=False)
     is_open_now = Column(Boolean, default=False)
-    average_price = Column(DECIMAL(precision=10, scale=2), nullable=True)
+    average_price = Column(Numeric(precision=10, scale=2), nullable=True)
     average_delivery = Column(String, nullable=True)
 
     # Relaciones
@@ -58,10 +58,4 @@ class Business(Base):
     categories = relationship("Category", back_populates="business", cascade="all, delete-orphan")
     department = relationship("Department", back_populates="businesses")
     municipality = relationship("Municipality", back_populates="businesses")
-
-# Índices adicionales para mejorar el rendimiento
-Index('idx_business_type_business', Business.type_business_id)
-Index('idx_business_department', Business.department_id)
-Index('idx_business_municipality', Business.municipality_id)
-Index('idx_business_admin', Business.admin_id)
-
+    invoices = relationship("BusinessInvoice", back_populates="business")

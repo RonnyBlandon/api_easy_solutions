@@ -39,6 +39,49 @@ class CategoryResponse(CategoryBase):
         from_attributes = True
 
 
+# Esquema para Extra
+class ExtraBase(BaseModel):
+    title: str
+    price: float
+    option_id: UUID4
+
+class ExtraCreate(ExtraBase):
+    pass
+
+class ExtraUpdate(BaseModel):
+    title: Optional[str] = None
+    price: Optional[float] = None
+
+class ExtraResponse(ExtraBase):
+    id: UUID4
+
+    class Config:
+        from_attributes = True
+
+
+# Esquema para Option
+class OptionBase(BaseModel):
+    title: str
+    max_extras: int
+    is_required: bool = False
+    product_id: UUID4
+
+class OptionCreate(OptionBase):
+    pass
+
+class OptionUpdate(BaseModel):
+    title: Optional[str] = None
+    max_extras: Optional[int] = None
+    is_required: Optional[bool] = None
+
+class OptionResponse(OptionBase):
+    id: UUID4
+    extras: List[ExtraResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
 # Esquema para Productos
 class ProductBase(BaseModel):
     product_name: str
@@ -63,51 +106,9 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(ProductBase):
     id: UUID4
-    options: List[UUID4] = []
-    images: List[UUID4] = []
+    options: List[OptionResponse] = []
+    images: List[ProductImageResponse] = []
     categories: List[int] = []
-
-    class Config:
-        from_attributes = True
-
-# Esquema para Option
-class OptionBase(BaseModel):
-    title: str
-    max_extras: int
-    is_required: bool = False
-    product_id: UUID4
-
-class OptionCreate(OptionBase):
-    pass
-
-class OptionUpdate(BaseModel):
-    title: Optional[str] = None
-    max_extras: Optional[int] = None
-    is_required: Optional[bool] = None
-
-class OptionResponse(OptionBase):
-    id: UUID4
-    extras: List[UUID4] = []
-
-    class Config:
-        from_attributes = True
-
-
-# Esquema para Extra
-class ExtraBase(BaseModel):
-    title: str
-    price: float
-    option_id: UUID4
-
-class ExtraCreate(ExtraBase):
-    pass
-
-class ExtraUpdate(BaseModel):
-    title: Optional[str] = None
-    price: Optional[float] = None
-
-class ExtraResponse(ExtraBase):
-    id: UUID4
 
     class Config:
         from_attributes = True
