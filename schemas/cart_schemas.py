@@ -1,63 +1,63 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
 from datetime import datetime
+from schemas.product_schemas import ProductResponse
 
-# Esquema base para el carrito
+# Esquema base para Cart
 class CartBase(BaseModel):
     user_id: UUID
-    created_at: datetime
-    updated_at: datetime
+    business_id: UUID
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     subtotal: Decimal
+    discount_total: Decimal
     taxes: Decimal
     delivery_fee: Decimal
     total: Decimal
 
     class Config:
-        from_attributes = True  # Permite que Pydantic pueda leer datos directamente de SQLAlchemy
+        from_attributes = True  # Permite leer datos desde objetos SQLAlchemy
 
-# Esquema para la creación de un carrito
+# Esquema para crear un Cart
 class CartCreate(CartBase):
     pass
 
-# Esquema para la actualización de un carrito
+# Esquema para actualizar un Cart
 class CartUpdate(CartBase):
-    subtotal: Decimal
-    taxes: Decimal
-    delivery_fee: Decimal
-    total: Decimal
+    pass
 
-# Esquema de respuesta del carrito, con los items incluidos
+# Esquema de respuesta para Cart, incluyendo sus items
 class CartResponse(CartBase):
-    cart_items: List['CartItemBase']  # Relación de items en el carrito
+    id: int
+    items: List['CartItemResponse'] = []  # Relación con los items
 
     class Config:
-        from_attributes = True  # Permite la conversión de instancias de SQLAlchemy a dict y viceversa
+        from_attributes = True
 
-
-# Esquema base para los elementos dentro del carrito
+# Esquema base para CartItem
 class CartItemBase(BaseModel):
     product_id: UUID
-    quantity: int
-    created_at: datetime
-    updated_at: datetime
+    quantity: int = Field(..., ge=1)  # Asegura que la cantidad sea al menos 1
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True  # Permite que Pydantic pueda leer datos directamente de SQLAlchemy
+        from_attributes = True
 
-# Esquema para la creación de un elemento dentro del carrito
+# Esquema para crear un CartItem
 class CartItemCreate(CartItemBase):
     pass
 
-# Esquema para la actualización de un elemento dentro del carrito
-class CartItemUpdate(CartItemBase):
-    quantity: int
+# Esquema para actualizar un CartItem
+class CartItemUpdate(BaseModel):
+    quantity: int = Field(..., ge=1)  # Asegura que la cantidad sea al menos 1
 
-# Esquema de respuesta de un elemento dentro del carrito, con información adicional
+# Esquema de respuesta para CartItem, incluyendo información del producto
 class CartItemResponse(CartItemBase):
-    product_name: str  # Nombre del producto
-    product_price: Decimal  # Precio del producto
+    id: int
+    product: ProductResponse
 
     class Config:
-        from_attributes = True  # Permite la conversión de instancias de SQLAlchemy a dict y viceversa
+        from_attributes = True

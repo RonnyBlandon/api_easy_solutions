@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pydantic import BaseModel, UUID4
 from typing import Optional, List
 
@@ -50,7 +51,7 @@ class ExtraCreate(ExtraBase):
 
 class ExtraUpdate(BaseModel):
     title: Optional[str] = None
-    price: Optional[float] = None
+    price: Optional[Decimal] = None
 
 class ExtraResponse(ExtraBase):
     id: UUID4
@@ -84,12 +85,13 @@ class OptionResponse(OptionBase):
 
 # Esquema para Productos
 class ProductBase(BaseModel):
-    product_name: str
-    product_price: float
-    product_description: Optional[str] = None
+    name: str
+    price: Decimal
+    description: Optional[str] = None
     stock: int = 0
     available: bool
     business_id: UUID4
+    discount: Decimal
     status: bool
 
 class ProductCreate(ProductBase):
@@ -97,11 +99,12 @@ class ProductCreate(ProductBase):
     pass
 
 class ProductUpdate(BaseModel):
-    product_name: Optional[str] = None
-    product_price: Optional[float] = None
-    product_description: Optional[str] = None
+    name: Optional[str] = None
+    price: Optional[Decimal] = None
+    description: Optional[str] = None
     stock: Optional[int] = None
     available: bool
+    discount: Decimal
     status: bool
 
 class ProductResponse(ProductBase):

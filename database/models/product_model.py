@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Float, Integer, Boolean, DECIMAL, ForeignKey, Table
+from decimal import Decimal
+from sqlalchemy import Column, String, Integer, Boolean, Numeric, ForeignKey, Table, CheckConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -45,12 +46,13 @@ class Product(Base):
     __tablename__ = 'products'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    product_name = Column(String, nullable=False)
-    product_price = Column(DECIMAL(precision=10, scale=2), nullable=False)
-    product_description = Column(String, nullable=True)
+    name = Column(String, nullable=False)
+    price = Column(Numeric(precision=10, scale=2), nullable=False)
+    description = Column(String, nullable=True)
     stock = Column(Integer, default=0)
     available = Column(Boolean, default=True)
     business_id = Column(UUID(as_uuid=True), ForeignKey('businesses.id', ondelete="CASCADE"), nullable=False)
+    discount = Column(Numeric(precision=10, scale=2), nullable=True, default=0.00)
     status = Column(Boolean, default=False)
 
     # Relaciones con otros modelos
@@ -62,6 +64,21 @@ class Product(Base):
         secondary="category_product_association",
         back_populates="products"
     )
+
+    # Restricciones
+    __table_args__ = (
+        CheckConstraint(
+            "discount >= 0 AND discount <= price",
+            name="check_valid_discount"
+        ),
+    )
+
+    def get_discounted_price(self) -> Decimal:
+        """
+        Calcula el precio final después de aplicar el descuento.
+        :return: Precio con descuento aplicado.
+        """
+        return max(self.price - (self.discount or 0), 0)  # Asegura que no haya precios negativos
 
 
 # Modelo para las opciones de productos
@@ -81,7 +98,7 @@ class Extra(Base):
     __tablename__ = 'extras'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String, nullable=False)
-    price = Column(DECIMAL(precision=10, scale=2), nullable=False)
+    price = Column(Numeric(precision=10, scale=2), nullable=False)
     option_id = Column(UUID(as_uuid=True), ForeignKey('options.id', ondelete="CASCADE"), nullable=False)
 
     option = relationship("Option", back_populates="extras")

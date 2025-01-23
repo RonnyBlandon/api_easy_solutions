@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from sqlalchemy.sql import func
 from decimal import Decimal
 from sqlalchemy import Column, DateTime, Integer, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
@@ -7,29 +7,16 @@ from database.session import Base
 
 class Cart(Base):
     __tablename__ = "carts"
+    
     id = Column(Integer, primary_key=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("auth.users.id", ondelete="CASCADE"), nullable=False, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    business_id = Column(UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True)  # Relación con el negocio
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Campos financieros
-    subtotal = Column(Numeric(precision=10, scale=2), nullable=False, default=Decimal('0.00'))  # Suma de los precios de los productos
-    taxes = Column(Numeric(precision=10, scale=2), nullable=False, default=Decimal('0.00'))  # Impuestos calculados
-    delivery_fee = Column(Numeric(precision=10, scale=2), nullable=False, default=Decimal('0.00'))  # Costo de envío
-    total = Column(Numeric(precision=10, scale=2), nullable=False, default=Decimal('0.00'))  # Total = Subtotal + Taxes + Delivery Fee
-
-    cart_items = relationship("CartItem", back_populates="cart", cascade="all, delete")
-    user = relationship("User", back_populates="cart")  # Relación inversa con User
-
-    def calculate_totals(self, tax_rate: Decimal, delivery_fee: Decimal):
-        """Método para calcular subtotal, impuestos y total usando Decimal."""
-        if not self.cart_items:
-            self.subtotal = Decimal('0.00')
-        else:
-            self.subtotal = sum(item.quantity * (item.product.price or Decimal('0.00')) for item in self.cart_items)
-        self.taxes = self.subtotal * tax_rate
-        self.delivery_fee = delivery_fee
-        self.total = self.subtotal + self.taxes + self.delivery_fee
+    items = relationship("CartItem", back_populates="cart", cascade="all, delete")
+    user = relationship("User", back_populates="cart")
+    business = relationship("Business")  # Relación con el negocio
 
 
 class CartItem(Base):
@@ -38,8 +25,8 @@ class CartItem(Base):
     cart_id = Column(Integer, ForeignKey("carts.id", ondelete="CASCADE"), nullable=False)
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    cart = relationship("Cart", back_populates="cart_items")
+    cart = relationship("Cart", back_populates="items")
     product = relationship("Product")
