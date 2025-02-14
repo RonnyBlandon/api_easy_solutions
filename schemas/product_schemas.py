@@ -1,25 +1,9 @@
+from __future__ import annotations  # Importar para Forward References
 from decimal import Decimal
 from pydantic import BaseModel, UUID4
 from typing import Optional, List
 
-# Esaquema para imagenes de productos
-class ProductImageBase(BaseModel):
-    product_id: UUID4
-    image_url: str
-    image_type: Optional[str] = None
-
-class ProductImageCreate(ProductImageBase):
-    pass
-
-class ProductImageUpdate(BaseModel):
-    image_url: Optional[str] = None
-    image_type: Optional[str] = None
-
-class ProductImageResponse(ProductImageBase):
-    id: UUID4
-
-    class Config:
-        from_attributes = True
+from schemas.business_schemas import BusinessResponse
 
 # Esquema para Categorias
 class CategoryBase(BaseModel):
@@ -34,17 +18,21 @@ class CategoryUpdate(BaseModel):
 
 class CategoryResponse(CategoryBase):
     id: int
-    products: List[UUID4] = []
+    products: List["ProductResponse"] = []  # Forward Reference corregido
 
     class Config:
         from_attributes = True
+
+class BusinessWithCategoriesResponse(BaseModel):
+    business: BusinessResponse
+    business_categories: List[CategoryResponse]
 
 
 # Esquema para Extra
 class ExtraBase(BaseModel):
     title: str
-    price: float
-    option_id: UUID4
+    price: Decimal
+    option_id: int
 
 class ExtraCreate(ExtraBase):
     pass
@@ -54,7 +42,7 @@ class ExtraUpdate(BaseModel):
     price: Optional[Decimal] = None
 
 class ExtraResponse(ExtraBase):
-    id: UUID4
+    id: int
 
     class Config:
         from_attributes = True
@@ -76,7 +64,7 @@ class OptionUpdate(BaseModel):
     is_required: Optional[bool] = None
 
 class OptionResponse(OptionBase):
-    id: UUID4
+    id: int
     extras: List[ExtraResponse] = []
 
     class Config:
@@ -88,30 +76,29 @@ class ProductBase(BaseModel):
     name: str
     price: Decimal
     description: Optional[str] = None
+    product_image_url: str
     stock: int = 0
     available: bool
     business_id: UUID4
     discount: Decimal
-    status: bool
+    is_active: bool
 
 class ProductCreate(ProductBase):
-    images: Optional[List[ProductImageCreate]]
     pass
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     price: Optional[Decimal] = None
     description: Optional[str] = None
+    product_image_url: Optional[str] = None
     stock: Optional[int] = None
     available: bool
     discount: Decimal
-    status: bool
+    is_active: bool
 
 class ProductResponse(ProductBase):
     id: UUID4
     options: List[OptionResponse] = []
-    images: List[ProductImageResponse] = []
-    categories: List[int] = []
 
     class Config:
         from_attributes = True

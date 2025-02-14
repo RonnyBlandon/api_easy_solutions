@@ -32,10 +32,10 @@ def get_carts_for_user(user_id: UUID, db: Session = Depends(get_db)):
     for cart in carts:
         # Recalcula totales dinámicamente
         subtotal = sum(
-            item.quantity * (item.product.price or Decimal('0.00')) for item in cart.items
+            item.quantity * (item.product.price or Decimal('0.00')) for item in cart.cart_items
         )
         discount_total = sum(
-            item.quantity * (item.product.discount or Decimal('0.00')) for item in cart.items
+            item.quantity * (item.product.discount or Decimal('0.00')) for item in cart.cart_items
         )
         effective_subtotal = subtotal - discount_total
         taxes = effective_subtotal * tax_rate
@@ -53,23 +53,25 @@ def get_carts_for_user(user_id: UUID, db: Session = Depends(get_db)):
             taxes=taxes,
             delivery_fee=delivery_fee,
             total=total,
-            items=[
+            cart_items=[
                 CartItemResponse(
                     id=item.id,
+                    product_id=item.product.id,
                     product=ProductResponse(
                         id=item.product.id,
                         name=item.product.name,
                         price=item.product.price,
+                        product_image_url=item.product.product_image_url,
                         discount=item.product.discount,
                         available=item.product.available,
                         business_id=item.product.business_id,
-                        status=item.product.status
+                        is_active=item.product.is_active
                     ),
                     quantity=item.quantity,
                     created_at=item.created_at,
                     updated_at=item.updated_at
                 )
-                for item in cart.items
+                for item in cart.cart_items
             ]
         ))
     

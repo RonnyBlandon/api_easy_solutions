@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
+from repositories.product import get_products_by_ids, search_products
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+from typing import List
 from uuid import UUID
 from database.session import get_db
-from database.models.product_model import Product, ProductImage, Option, Extra
+from database.models.product_model import Product, Option, Extra
 from schemas.product_schemas import (
     ProductCreate, ProductUpdate, ProductResponse,
-    ProductImageCreate, ProductImageUpdate, ProductImageResponse,
     OptionCreate, OptionUpdate, OptionResponse,
     ExtraCreate, ExtraUpdate, ExtraResponse
 )
@@ -20,18 +22,26 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
-    # Agregar imágenes si se proporcionan
-    if product.images:
-        db_images = [
-            ProductImage(product_id=db_product.id, **image.model_dump())
-            for image in product.images
-        ]
-        db.add_all(db_images)
-        db.commit()
     # Refrescar el producto para incluir las imágenes asociadas
     db.refresh(db_product)
     return ProductResponse.model_validate(db_product)
 
+
+@router.get("/search", response_model=List[ProductResponse])
+def search_products_endpoint(
+    business_id: UUID,
+    query: str = Query(..., min_length=1, description="Texto a buscar en el nombre del producto"),
+    db: Session = Depends(get_db)):
+    
+    return search_products(db, business_id, query)
+
+
+@router.post("/search_by_ids/", response_model=List[ProductResponse])
+def get_products_by_ids_endpoint(
+    product_ids: List[UUID],
+    db: Session = Depends(get_db)
+):
+    return get_products_by_ids(db, product_ids)
 
 
 @router.get("/{product_id}/", response_model=ProductResponse)
@@ -39,7 +49,7 @@ def get_product(product_id: UUID, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return ProductResponse.model_validate(product)
+    return product
 
 
 @router.put("/{product_id}/", response_model=ProductResponse)
@@ -65,33 +75,6 @@ def delete_product(product_id: UUID, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return {"detail": "Product deleted successfully"}
-
-
-# Endpoints para imágenes de productos
-@router.post("/{product_id}/images/", response_model=ProductImageResponse)
-def add_product_image(product_id: UUID, image: ProductImageCreate, db: Session = Depends(get_db)):
-    # Verificar si el producto existe
-    db_product = db.query(Product).filter(Product.id == product_id).first()
-    if not db_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    # Crear instancia del modelo ProductImage excluyendo el campo product_id para evitar conflicto
-    db_image = ProductImage(**image.model_dump(exclude={"product_id"}), product_id=product_id)
-    db.add(db_image)
-    db.commit()
-    db.refresh(db_image)
-    return ProductImageResponse.model_validate(db_image)
-
-
-@router.delete("/images/{image_id}/", response_model=dict)
-def delete_product_image(image_id: UUID, db: Session = Depends(get_db)):
-    image = db.query(ProductImage).filter(ProductImage.id == image_id).first()
-    if not image:
-        raise HTTPException(status_code=404, detail="Image not found")
-
-    db.delete(image)
-    db.commit()
-    return {"detail": "Product image deleted successfully"}
 
 
 # Endpoints para opciones

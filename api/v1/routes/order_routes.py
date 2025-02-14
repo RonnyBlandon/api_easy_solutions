@@ -23,7 +23,7 @@ def get_orders(user_id: UUID, db: Session = Depends(get_db)):
 @router.get("/{driver_id}", response_model=List[OrderResponse])
 def get_orders(driver_id: UUID, db: Session = Depends(get_db)):
       
-    orders = db.query(Order).filter(Order.driver_id == driver.id).all()
+    orders = db.query(Order).filter(Order.driver_id == driver_id).all()
     return orders
 
 # Obtener todos los pedidos de un negocio

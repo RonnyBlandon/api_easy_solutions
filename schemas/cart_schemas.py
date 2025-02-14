@@ -31,7 +31,7 @@ class CartUpdate(CartBase):
 # Esquema de respuesta para Cart, incluyendo sus items
 class CartResponse(CartBase):
     id: int
-    items: List['CartItemResponse'] = []  # Relación con los items
+    cart_items: List['CartItemResponse'] = []  # Relación con los items
 
     class Config:
         from_attributes = True

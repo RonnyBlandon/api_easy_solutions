@@ -15,6 +15,12 @@ from schemas.business_schemas import (
 
 router = APIRouter(prefix="/businesses", tags=["Businesses"])
 
+# Endpoint para obtener todos los negocios
+@router.get("/", response_model=List[BusinessResponse])
+def get_all_businesses(db: Session = Depends(get_db)):
+    businesses = db.query(Business).all()
+    return businesses
+
 # Endpoint para crear un negocio
 @router.post("/", response_model=BusinessResponse, status_code=201)
 def create_business(business_data: BusinessCreate, db: Session = Depends(get_db)):
@@ -23,12 +29,6 @@ def create_business(business_data: BusinessCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(new_business)
     return new_business
-
-# Endpoint para obtener todos los negocios
-@router.get("/", response_model=List[BusinessResponse])
-def get_all_businesses(db: Session = Depends(get_db)):
-    businesses = db.query(Business).all()
-    return businesses
 
 # Endpoint para obtener un negocio por ID
 @router.get("/{business_id}", response_model=BusinessResponse)
@@ -77,15 +77,19 @@ def add_business_image(business_id: UUID, image_data: BusinessImageCreate, db: S
     return new_image
 
 # Endpoint para obtener los tipos de negocio
-@router.get("/types", response_model=List[TypeBusinessResponse])
+@router.get("/types_business/", response_model=List[TypeBusinessResponse])
 def get_all_type_businesses(db: Session = Depends(get_db)):
-    types = db.query(TypeBusiness).all()
-    return types
+    types_business = db.query(TypeBusiness).all()
+    types_business_filtered = []
+    for type_business in types_business:
+        if type_business.businesses:
+            types_business_filtered.append(type_business)
+    return types_business_filtered
 
 # Endpoint para crear un tipo de negocio
-@router.post("/types", response_model=TypeBusinessResponse, status_code=201)
+@router.post("/type_business/", response_model=TypeBusinessResponse, status_code=201)
 def create_type_business(type_data: TypeBusinessCreate, db: Session = Depends(get_db)):
-    new_type = TypeBusiness(**type_data.dict())
+    new_type = TypeBusiness(**type_data.model_dump())
     db.add(new_type)
     db.commit()
     db.refresh(new_type)

@@ -1,78 +1,118 @@
-from pydantic import BaseModel, EmailStr, UUID4, HttpUrl
+from pydantic import BaseModel, EmailStr, UUID4
 from typing import Optional, List
 from datetime import datetime
-from enum import Enum
-from schemas.business_schemas import BusinessResponse
 
-# Enum para los roles de usuario
-class UserRole(str, Enum):
-    USER = "USER"
-    DRIVER = "DRIVER"
-    BUSINESS_ADMIN = "BUSINESS_ADMIN"
 
-# Esquemas de User
-class UserBase(BaseModel):
+# Esquema base para usuario
+class UserSchemaBase(BaseModel):
     email: EmailStr
     phone_number: str
     full_name: str
-    role: UserRole
-    department_id: int
-    municipality_id: int
-    google_user_id: Optional[str] = None
+    municipality_id: Optional[int] = None
+    profile_image: Optional[str] = None
     is_active: Optional[bool] = True
-    profile_image: Optional[HttpUrl] = None  # Imagen de perfil del usuario
 
-class UserCreate(UserBase):
+# Esquema para la creación de usuarios
+class UserSchemaCreate(UserSchemaBase):
     password: str
 
-class UserResponse(UserBase):
+# Esquema para la actualización de usuarios
+class UserSchemaUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    full_name: Optional[str] = None
+    profile_image: Optional[str] = None
+    is_active: Optional[bool] = None
+    hashed_password: Optional[str] = None
+
+# Esquema de respuesta para usuarios
+class UserSchemaResponse(UserSchemaBase):
     id: UUID4
     created_at: datetime
-    department_id: Optional[int] = None
-    municipality_id: Optional[int] = None
+    roles: Optional[List[str]] = []
 
     class Config:
         from_attributes = True
 
-# Esquemas de Department
-class DepartmentBase(BaseModel):
+# Esquema base para roles
+class RoleSchemaBase(BaseModel):
     name: str
 
-class DepartmentResponse(DepartmentBase):
+# Esquema para la creación de roles
+class RoleSchemaCreate(RoleSchemaBase):
+    pass
+
+# Esquema de respuesta para roles
+class RoleSchemaResponse(RoleSchemaBase):
     id: int
-    users: List[UserResponse] = []
-    businesses: List["BusinessResponse"] = []
-    municipalities: List["MunicipalityResponse"] = []
 
     class Config:
         from_attributes = True
 
-# Esquemas de Municipality
-class MunicipalityBase(BaseModel):
-    name: str
-    department_id: int
+# Esquema base para la asociación de roles de usuario
+class UserRoleAssociationSchemaBase(BaseModel):
+    user_id: UUID4
+    role_id: int
+    assigned_at: Optional[datetime] = None
 
-class MunicipalityResponse(MunicipalityBase):
-    id: int
-    department: DepartmentResponse
-    users: List[UserResponse] = []
-    addresses: List["AddressResponse"] = []
-    businesses: List["BusinessResponse"] = []
+# Esquema para la creación de la asociación de roles de usuario
+class UserRoleAssociationSchemaCreate(UserRoleAssociationSchemaBase):
+    pass
+
+
+# Esquema de respuesta para la asociación de roles de usuario
+class UserRoleAssociationSchemaResponse(UserRoleAssociationSchemaBase):
+    id: UUID4
 
     class Config:
         from_attributes = True
 
-# Esquemas de Address
-class AddressBase(BaseModel):
+# Esquema base para direcciones
+class AddressSchemaBase(BaseModel):
     address_type: str
     street_address: str
     latitude: Optional[str] = None
     longitude: Optional[str] = None
-
-class AddressResponse(AddressBase):
-    id: int
     municipality_id: int
-    municipality: MunicipalityResponse
+
+# Esquema para la creación de direcciones
+class AddressSchemaCreate(AddressSchemaBase):
+    pass
+
+# Esquema para la actualización de direcciones
+class AddressSchemaUpdate(BaseModel):
+    address_type: Optional[str] = None
+    street_address: Optional[str] = None
+    latitude: Optional[str] = None
+    longitude: Optional[str] = None
+    municipality_id: Optional[int] = None
+
+# Esquema de respuesta para direcciones
+class AddressSchemaResponse(AddressSchemaBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# Esquema base para municipios
+class MunicipalitySchemaBase(BaseModel):
+    name: str
+    department_id: int
+
+# Esquema de respuesta para municipios
+class MunicipalitySchemaResponse(MunicipalitySchemaBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# Esquema base para departamentos
+class DepartmentSchemaBase(BaseModel):
+    name: str
+
+# Esquema de respuesta para departamentos
+class DepartmentSchemaResponse(DepartmentSchemaBase):
+    id: int
 
     class Config:
         from_attributes = True

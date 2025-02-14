@@ -13,7 +13,7 @@ class BusinessImageCreate(BusinessImageBase):
 
 
 class BusinessImageResponse(BusinessImageBase):
-    id: UUID4
+    id: int
 
     class Config:
         from_attributes = True
@@ -22,6 +22,7 @@ class BusinessImageResponse(BusinessImageBase):
 # Esquema para TypeBusiness
 class TypeBusinessBase(BaseModel):
     name: str
+    image_url: str
 
 
 class TypeBusinessCreate(TypeBusinessBase):
@@ -40,8 +41,6 @@ class BusinessBase(BaseModel):
     address: str
     admin_id: UUID4
     business_name: str
-    category_id: int
-    department_id: Optional[int]
     municipality_id: Optional[int]
     country: str
     description: Optional[str]
@@ -50,7 +49,7 @@ class BusinessBase(BaseModel):
     long: Optional[float]
     phone_number: Optional[str]
     zip_code: Optional[str]
-    status: bool
+    is_active: bool
     is_popular_this_week: bool
     is_novelty: bool
     has_free_delivery: bool
@@ -67,7 +66,7 @@ class BusinessCreate(BusinessBase):
 class BusinessResponse(BusinessBase):
     id: UUID4
     type_business: Optional[TypeBusinessResponse]
-    images: List[BusinessImageResponse] = []
+    business_images: List[BusinessImageResponse] = []
 
     class Config:
         from_attributes = True
