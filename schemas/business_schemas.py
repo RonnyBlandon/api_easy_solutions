@@ -35,6 +35,9 @@ class TypeBusinessResponse(TypeBusinessBase):
     class Config:
         from_attributes = True
 
+class TypeBusinessListResponse(BaseModel):
+    type_business_list: List[TypeBusinessResponse]
+
 
 # Esquema para Business
 class BusinessBase(BaseModel):
@@ -67,6 +70,11 @@ class BusinessResponse(BusinessBase):
     id: UUID4
     type_business: Optional[TypeBusinessResponse]
     business_images: List[BusinessImageResponse] = []
+    is_favorite: Optional[bool] = None
 
     class Config:
         from_attributes = True
+
+
+class BusinessListResponse(BaseModel):
+    business_list: List[BusinessResponse]

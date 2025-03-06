@@ -9,7 +9,7 @@ from schemas.auth_schemas import TokenData  # Importamos TokenData desde el nuev
 # Configuración de seguridad
 SECRET_KEY = get_secret("SECRET_KEY")  # Clave secreta para firmar los JWT
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # Tiempo de expiración del access token
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  # Tiempo de expiración del access token
 REFRESH_TOKEN_EXPIRE_DAYS = 60    # Tiempo de expiración del refresh token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

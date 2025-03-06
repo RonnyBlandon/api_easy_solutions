@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
+from core.security import get_current_active_user
 from repositories.product import get_products_by_ids, search_products
 from sqlalchemy.orm import Session
-from sqlalchemy import select
-from typing import List
 from uuid import UUID
 from database.session import get_db
 from database.models.product_model import Product, Option, Extra
+from schemas.auth_schemas import TokenData
 from schemas.product_schemas import (
-    ProductCreate, ProductUpdate, ProductResponse,
+    ProductCreate, ProductUpdate, ProductResponse, ProductListResponse, ProductIdsRequest,
     OptionCreate, OptionUpdate, OptionResponse,
     ExtraCreate, ExtraUpdate, ExtraResponse
 )
@@ -27,21 +27,27 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     return ProductResponse.model_validate(db_product)
 
 
-@router.get("/search", response_model=List[ProductResponse])
+@router.get("/search", response_model=ProductListResponse)
 def search_products_endpoint(
     business_id: UUID,
-    query: str = Query(..., min_length=1, description="Texto a buscar en el nombre del producto"),
-    db: Session = Depends(get_db)):
-    
-    return search_products(db, business_id, query)
-
-
-@router.post("/search_by_ids/", response_model=List[ProductResponse])
-def get_products_by_ids_endpoint(
-    product_ids: List[UUID],
-    db: Session = Depends(get_db)
+    query: str | None = Query(None, description="Texto a buscar en el nombre del producto"),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_active_user),  # Obtener el usuario autenticado
 ):
-    return get_products_by_ids(db, product_ids)
+    if not query:
+        return {"product_list": []}
+
+    return {"product_list": search_products(db, business_id, query, current_user.local_id)}
+
+
+@router.post("/search_by_ids/", response_model=ProductListResponse)
+def get_products_by_ids_endpoint(
+    request: ProductIdsRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_active_user)  # Obtener el usuario autenticado
+):
+    return {"product_list": get_products_by_ids(db, request.product_ids, current_user.local_id)}
+
 
 
 @router.get("/{product_id}/", response_model=ProductResponse)

@@ -1,70 +1,106 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from uuid import UUID
-from typing import List
+from core.security import get_current_active_user
+from database.models.business_model import Business
+from database.models.product_model import Product
 from database.session import get_db
 from database.models.favourite_model import Favourite
-from schemas.favourite_schemas import FavouriteCreate, FavouriteResponse
+from schemas.auth_schemas import TokenData
+from schemas.business_schemas import BusinessListResponse
+from schemas.favourite_schemas import FavouriteBusinessCreate, FavouriteProductCreate, FavouriteResponse
+from schemas.product_schemas import ProductListResponse
 
 router = APIRouter(prefix="/favourites", tags=["Favourites"])
 
-@router.post("/", response_model=FavouriteResponse)
-def create_favourite(favourite: FavouriteCreate, db: Session = Depends(get_db)):
-    # Verificar si es favorito de negocio
-    if favourite.business_id:
-        existing_business_favourite = db.query(Favourite).filter(
-            Favourite.user_id == favourite.user_id,
-            Favourite.business_id == favourite.business_id
-        ).first()
-        if existing_business_favourite:
-            raise HTTPException(
-                status_code=400,
-                detail="El usuario ya tiene este negocio como favorito."
-            )
+@router.post("/business/", status_code=status.HTTP_201_CREATED, response_model=FavouriteResponse)
+def add_favourite_business(favourite: FavouriteBusinessCreate, db: Session = Depends(get_db), current_user: TokenData = Depends(get_current_active_user)):
+    user_id = current_user.local_id
     
-    # Verificar si es favorito de producto
-    if favourite.product_id:
-        existing_product_favourite = db.query(Favourite).filter(
-            Favourite.user_id == favourite.user_id,
-            Favourite.product_id == favourite.product_id
-        ).first()
-        if existing_product_favourite:
-            raise HTTPException(
-                status_code=400,
-                detail="El usuario ya tiene este producto como favorito."
-            )
-    # Crear un nuevo favorito
-    db_favourite = Favourite(**favourite.model_dump())
+    # Verificar si el negocio ya está en favoritos
+    existing_favourite = db.query(Favourite).filter(
+        Favourite.user_id == user_id,
+        Favourite.business_id == favourite.business_id
+    ).first()
+    if existing_favourite:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El negocio ya está en favoritos."
+        )
+    
+    # Crear y guardar el favorito
+    db_favourite = Favourite(user_id=user_id, business_id=favourite.business_id)
     db.add(db_favourite)
     db.commit()
     db.refresh(db_favourite)
-    return db_favourite
 
-@router.get("/", response_model=List[FavouriteResponse])
-def get_all_favourites(user_id: UUID, db: Session = Depends(get_db)):
-    """
-    Obtiene todos los favoritos del usuario, incluyendo negocios y productos.
-    """
-    return db.query(Favourite).filter(Favourite.user_id == user_id).all()
+    return {"message": "Negocio agregado a favoritos correctamente"}
 
-@router.get("/businesses", response_model=List[FavouriteResponse])
-def get_business_favourites(user_id: UUID, db: Session = Depends(get_db)):
-    """
-    Obtiene solo los favoritos asociados a negocios.
-    """
-    return db.query(Favourite).filter(Favourite.user_id == user_id, Favourite.business_id != None).all()
+@router.post("/product/", status_code=status.HTTP_201_CREATED, response_model=FavouriteResponse)
+def add_favourite_product(favourite: FavouriteProductCreate, db: Session = Depends(get_db), current_user: TokenData = Depends(get_current_active_user)):
+    user_id = current_user.local_id
+    
+    # Verificar si el producto ya está en favoritos
+    existing_favourite = db.query(Favourite).filter(
+        Favourite.user_id == user_id,
+        Favourite.product_id == favourite.product_id
+    ).first()
+    if existing_favourite:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El producto ya está en favoritos. {existing_favourite.product_id}"
+        )
+    
+    # Crear y guardar el favorito
+    db_favourite = Favourite(user_id=user_id, product_id=favourite.product_id)
+    db.add(db_favourite)
+    db.commit()
+    db.refresh(db_favourite)
 
-@router.get("/products", response_model=List[FavouriteResponse])
-def get_product_favourites(user_id: UUID, db: Session = Depends(get_db)):
-    """
-    Obtiene solo los favoritos asociados a productos.
-    """
-    return db.query(Favourite).filter(Favourite.user_id == user_id, Favourite.product_id != None).all()
+    return {"message": "Producto agregado a favoritos correctamente"}
 
-@router.delete("/{favourite_id}", status_code=204)
-def delete_favourite(favourite_id: int, db: Session = Depends(get_db)):
-    favourite = db.query(Favourite).filter(Favourite.id == favourite_id).first()
+
+@router.get("/businesses", response_model=BusinessListResponse)
+def get_favourite_businesses(current_user: TokenData = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """
+    Obtiene la lista de negocios que el usuario ha marcado como favoritos.
+    """
+    businesses = (
+        db.query(Business)
+        .join(Favourite, Business.id == Favourite.business_id)
+        .filter(Favourite.user_id == current_user.local_id)
+        .all()
+    )
+    return {"business_list": businesses}
+
+@router.get("/products", response_model=ProductListResponse)
+def get_favourite_products(current_user: TokenData = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """
+    Obtiene la lista de productos que el usuario ha marcado como favoritos.
+    """
+    products = (
+        db.query(Product)
+        .join(Favourite, Product.id == Favourite.product_id)
+        .filter(Favourite.user_id == current_user.local_id)
+        .all()
+    )
+    return {"product_list": products}
+
+@router.delete("/business/{business_id}", status_code=status.HTTP_200_OK, response_model=FavouriteResponse)
+def delete_favourite_business(business_id: UUID, db: Session = Depends(get_db), current_user: TokenData = Depends(get_current_active_user)):
+    favourite = db.query(Favourite).filter(and_(Favourite.user_id == current_user.local_id, Favourite.business_id == business_id)).first()
     if not favourite:
-        raise HTTPException(status_code=404, detail="Favourite not found")
+        raise HTTPException(status_code=404, detail="Negocio favorito no encontrado")
     db.delete(favourite)
     db.commit()
+    return {"message": "Negocio favorito eliminado correctamente"}
+
+@router.delete("/product/{product_id}", status_code=status.HTTP_200_OK, response_model=FavouriteResponse)
+def delete_favourite_product(product_id: UUID, db: Session = Depends(get_db), current_user: TokenData = Depends(get_current_active_user)):
+    favourite = db.query(Favourite).filter(and_(Favourite.user_id == current_user.local_id, Favourite.product_id == product_id)).first()
+    if not favourite:
+        raise HTTPException(status_code=404, detail="Producto favorito no encontrado")
+    db.delete(favourite)
+    db.commit()
+    return {"message": "Producto favorito eliminado correctamente"}

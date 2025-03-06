@@ -37,7 +37,7 @@ class User(Base):
     municipality_id = Column(Integer, ForeignKey('municipalities.id'), nullable=True)
     is_active = Column(Boolean, default=True)
     google_user_id = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())  # Fecha de creación
+    start_date = Column(DateTime(timezone=True), server_default=func.now())  # Fecha de creación
 
     # Relaciones
     roles = relationship("UserRoleAssociation", back_populates="user", cascade="all, delete-orphan")

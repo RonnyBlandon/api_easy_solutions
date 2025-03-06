@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.v1.routes.auth_routes import router as auth_routes
+from api.v1.routes.user_routes import router as users_routes
 from api.v1.routes.business_routes import router as business_routes
 from api.v1.routes.favourite_routes import router as favourites_router
 from api.v1.routes.category_routes import router as categories_router
@@ -32,6 +33,7 @@ app.add_middleware(
 
 # Registrar las rutas de autenticación
 app.include_router(auth_routes)
+app.include_router(users_routes)
 app.include_router(business_routes)
 app.include_router(categories_router)
 app.include_router(products_router)

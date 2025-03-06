@@ -1,25 +1,28 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List
 from uuid import UUID
 from database.session import get_db
 from database.models.business_model import Business, BusinessImage, TypeBusiness
 from schemas.business_schemas import (
     BusinessCreate,
     BusinessResponse,
+    BusinessListResponse,
     BusinessImageCreate,
     BusinessImageResponse,
     TypeBusinessCreate,
     TypeBusinessResponse,
+    TypeBusinessListResponse
 )
 
 router = APIRouter(prefix="/businesses", tags=["Businesses"])
 
-# Endpoint para obtener todos los negocios
-@router.get("/", response_model=List[BusinessResponse])
-def get_all_businesses(db: Session = Depends(get_db)):
-    businesses = db.query(Business).all()
-    return businesses
+# Endpoint para obtener un negocio por ID
+@router.get("/types_business/{type_business_id}", response_model=BusinessListResponse)
+def get_business_by_id(type_business_id: int, db: Session = Depends(get_db)):
+    businesses = db.query(Business).filter(Business.type_business_id == type_business_id).all()
+    if not businesses:
+        raise HTTPException(status_code=404, detail="Businesses not found")
+    return {"business_list": businesses}
 
 # Endpoint para crear un negocio
 @router.post("/", response_model=BusinessResponse, status_code=201)
@@ -45,7 +48,7 @@ def update_business(business_id: UUID, business_data: BusinessCreate, db: Sessio
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     
-    for key, value in business_data.dict().items():
+    for key, value in business_data.model_dump().items():
         setattr(business, key, value)
     
     db.commit()
@@ -70,21 +73,23 @@ def add_business_image(business_id: UUID, image_data: BusinessImageCreate, db: S
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     
-    new_image = BusinessImage(**image_data.dict())
+    new_image = BusinessImage(**image_data.model_dump())
     db.add(new_image)
     db.commit()
     db.refresh(new_image)
     return new_image
 
+
 # Endpoint para obtener los tipos de negocio
-@router.get("/types_business/", response_model=List[TypeBusinessResponse])
+@router.get("/types_business/", response_model=TypeBusinessListResponse)
 def get_all_type_businesses(db: Session = Depends(get_db)):
     types_business = db.query(TypeBusiness).all()
     types_business_filtered = []
     for type_business in types_business:
         if type_business.businesses:
             types_business_filtered.append(type_business)
-    return types_business_filtered
+    return {"type_business_list": types_business_filtered}
+
 
 # Endpoint para crear un tipo de negocio
 @router.post("/type_business/", response_model=TypeBusinessResponse, status_code=201)

@@ -98,7 +98,14 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(ProductBase):
     id: UUID4
+    is_favorite: Optional[bool] = None
     options: List[OptionResponse] = []
 
     class Config:
         from_attributes = True
+
+class ProductIdsRequest(BaseModel):
+    product_ids: List[UUID4]
+
+class ProductListResponse(BaseModel):
+    product_list: List[ProductResponse]

@@ -9,7 +9,6 @@ class UserSchemaBase(BaseModel):
     phone_number: str
     full_name: str
     municipality_id: Optional[int] = None
-    profile_image: Optional[str] = None
     is_active: Optional[bool] = True
 
 # Esquema para la creación de usuarios
@@ -18,18 +17,15 @@ class UserSchemaCreate(UserSchemaBase):
 
 # Esquema para la actualización de usuarios
 class UserSchemaUpdate(BaseModel):
-    email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     full_name: Optional[str] = None
-    profile_image: Optional[str] = None
-    is_active: Optional[bool] = None
     hashed_password: Optional[str] = None
 
 # Esquema de respuesta para usuarios
 class UserSchemaResponse(UserSchemaBase):
     id: UUID4
-    created_at: datetime
-    roles: Optional[List[str]] = []
+    start_date: datetime
+    roles: Optional[str] = None
 
     class Config:
         from_attributes = True

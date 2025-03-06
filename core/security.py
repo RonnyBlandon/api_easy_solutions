@@ -4,7 +4,7 @@ from core.auth import decode_access_token
 from schemas.auth_schemas import TokenData  # Importamos TokenData desde el nuevo archivo
 
 # Definición del esquema de OAuth2
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/oauth2-signIn")
 
 # Obtener el usuario actual a partir del token
 def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
@@ -12,7 +12,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
 
 # Verificar que el usuario esté activo
 def get_current_active_user(current_user: TokenData = Depends(get_current_user)) -> TokenData:
-    if not current_user.id:  # Verifica que el usuario tenga un ID válido
+    if not current_user.local_id:  # Verifica que el usuario tenga un ID válido
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuario inactivo o inválido")
     return current_user
 

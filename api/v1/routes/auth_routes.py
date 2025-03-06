@@ -1,18 +1,20 @@
 import requests
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from schemas.auth_schemas import GoogleSignInRequest, SignInRequest, RefreshToken, Token, PasswordResetRequest
 from schemas.user_schemas import UserSchemaCreate
 from core.config import get_secret
-from database.models.users_model import User, Role, UserRoleAssociation
+from database.models.users_model import User
 from database.models.cart_model import Cart
 from database.session import get_db  # Para interactuar con la base de datos
 from sqlalchemy.orm import Session
 from utils.email_utils import send_email
 from core.auth import (create_access_token, create_refresh_token, decode_refresh_token, hash_password, 
                        verify_password, create_password_reset_token, verify_password_reset_token)
+from utils.validators import validate_phone_number
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -20,6 +22,33 @@ GOOGLE_CLIENT_ID = get_secret("GOOGLE_CLIENT_ID")
 
 # Configura el directorio de las plantillas
 templates = Jinja2Templates(directory="templates")
+
+
+# Endpoint para iniciar sesión en Swagger UI con OAuth2PasswordRequestForm
+@router.post("/oauth2-signIn", response_model=Token)
+def oauth2_sign_in(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.username).first()
+    
+    if not user or not verify_password(data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Correo o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Obtener todos los roles del usuario desde la relación con UserRoleAssociation y Role
+    roles = [role_association.role.name for role_association in user.roles]
+
+    access_token = create_access_token(data={"id": str(user.id), "role": str(roles)})
+    refresh_token = create_refresh_token(data={"id": str(user.id), "role": str(roles)})
+
+    return {
+        "local_id": str(user.id),
+        "access_token": access_token,
+        "token_type": "bearer",
+        "refresh_token": refresh_token,
+        "roles": str(roles)
+    }
 
 # Endpoint para iniciar sesión
 @router.post("/signIn", response_model=Token)
@@ -44,7 +73,7 @@ def sign_in(data: SignInRequest, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "role": str(roles)
+        "roles": str(roles)
     }
 
 # Endpoint para registrar un nuevo usuario
@@ -56,6 +85,9 @@ def sign_up(user_data: UserSchemaCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El usuario ya está registrado"
         )
+
+    # Validación del telefono
+    validate_phone_number(user.phone_number)
 
     # Validación de la contraseña
     if len(user_data.password) < 8:
@@ -87,7 +119,7 @@ def sign_up(user_data: UserSchemaCreate, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "role": str(roles)
+        "roles": str(roles)
     }
 
 # Endpoint para renovar el access token usando el refresh token
@@ -113,7 +145,7 @@ def refresh_token(refresh_token: RefreshToken, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": new_refresh_token,
-        "role": str(roles)
+        "roles": str(roles)
     }
 
 # Endpoint para solicitar recuperación de contraseña
@@ -125,7 +157,7 @@ def request_password_reset(request: PasswordResetRequest, db: Session = Depends(
 
     # Genera el token de recuperación
     token = create_password_reset_token({"user_id": str(user.id)}, timedelta(minutes=get_secret("RESET_PASSWORD_TOKEN_EXPIRATION_MINUTES")))
-    reset_link = f"http://192.168.0.7:8000/auth/reset-password-form?token={token}"
+    reset_link = f"http://192.168.0.3:8000/auth/reset-password-form?token={token}"
 
     # Crea el contenido del correo
     email_subject = "Recuperación de contraseña"
@@ -246,9 +278,9 @@ def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
         "full_name": str(user.full_name),
         "email": str(user.email),
         "phone_number": str(user.phone_number),
-        "start_date": str(user.created_at),
+        "start_date": str(user.start_date),
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "role": str(roles)
+        "roles": str(roles)
     }
