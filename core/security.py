@@ -17,12 +17,12 @@ def get_current_active_user(current_user: TokenData = Depends(get_current_user))
     return current_user
 
 # Verificar que el usuario tenga un rol específico
-def get_current_user_with_role(required_role: str):
+def get_current_user_with_role(required_roles: str):
     def role_verification(current_user: TokenData = Depends(get_current_active_user)) -> TokenData:
-        if current_user.role != required_role:
+        if current_user.roles != required_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
-                detail=f"El usuario no tiene privilegios de {required_role}"
+                detail=f"El usuario no tiene privilegios de {required_roles}"
             )
         return current_user
     return role_verification

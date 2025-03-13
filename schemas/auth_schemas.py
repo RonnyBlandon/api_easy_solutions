@@ -1,7 +1,8 @@
+from datetime import datetime
 from fastapi import Form
 # user_schemas.py
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import UUID4, BaseModel, EmailStr
+from typing import Optional, List
 
 #Esquema para signIn de usuarios
 class SignInRequest(BaseModel):
@@ -14,12 +15,12 @@ class Token(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     local_id: str
-    role: Optional[str] = None
+    roles: List[str]
 
 # Esquema para los datos del token
 class TokenData(BaseModel):
     local_id: str
-    role: Optional[str] = None
+    roles: List[str]
 
 #Esquema para refrescar el access token
 class RefreshToken(BaseModel):
@@ -37,3 +38,16 @@ class PasswordResetConfirm(BaseModel):
 class GoogleSignInRequest(BaseModel):
     id_token: str = None
     access_token: str = None
+
+# Esquema de respuesta para inicio de sesion de Google
+class GoogleSignInResponse(BaseModel):
+    local_id: UUID4
+    full_name: str
+    email: EmailStr
+    phone_number: Optional[str] = None
+    start_date: datetime
+    access_token: str
+    token_type: str = "bearer"
+    refresh_token: str
+    providers: List[str]
+    roles: List[str]

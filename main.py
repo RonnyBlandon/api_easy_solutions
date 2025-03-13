@@ -10,7 +10,7 @@ from api.v1.routes.cart_routes import router as cart_router
 from api.v1.routes.order_routes import router as order_router
 from database.session import init_db
 # import models
-from database.models.users_model import User, UserRoleAssociation, Driver, BusinessAdmin, Role, Address, Department, Municipality
+from database.models.users_model import User, Driver, BusinessAdmin, Address, Department, Municipality
 from database.models.business_model import TypeBusiness, Business
 from database.models.product_model import Category, CategoryProductAssociation, Product, Option, Extra
 from database.models.favourite_model import Favourite

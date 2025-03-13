@@ -33,7 +33,7 @@ def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] 
     to_encode.update({
         "exp": expire,
         "sub": str(data["id"]),
-        "role": data.get("role")  # Incluimos el rol del usuario en el token
+        "roles": data.get("roles")  # Incluimos el rol del usuario en el token
     })
     
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -46,7 +46,7 @@ def create_refresh_token(data: dict) -> str:
     to_encode.update({
         "exp": expire,
         "sub": str(data["id"]),
-        "role": data.get("role")
+        "roles": data.get("roles")
     })
     
     refresh_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -57,14 +57,14 @@ def decode_access_token(token: str) -> TokenData:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
-        role: str = payload.get("role")
+        roles: str = payload.get("roles")
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, 
                 detail="Credenciales de autenticación inválidas",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        token_data = TokenData(local_id=user_id, role=role)
+        token_data = TokenData(local_id=user_id, roles=roles)
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -84,13 +84,13 @@ def decode_refresh_token(token: str) -> TokenData:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
-        role: str = payload.get("role")
+        roles: str = payload.get("roles")
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, 
                 detail="Credenciales de autenticación inválidas"
             )
-        token_data = TokenData(local_id=user_id, role=role)
+        token_data = TokenData(local_id=user_id, roles=roles)
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

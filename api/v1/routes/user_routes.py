@@ -11,16 +11,13 @@ from utils.validators import validate_phone_number
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-# Obtener un usuario por ID
+# Obtener un usuario por token
 @router.get("/", response_model=UserSchemaResponse)
 def get_user(db: Session = Depends(get_db), current_user: TokenData = Depends(get_current_active_user)):
     user_id = current_user.local_id
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    
-    # Convertir los roles a una lista de cadenas
-    roles = [role.role.name for role in user.roles] if user.roles else []  # Ajusta según la relación
     
     # Retornar el usuario con los roles transformados
     return {
@@ -29,10 +26,10 @@ def get_user(db: Session = Depends(get_db), current_user: TokenData = Depends(ge
         "phone_number": user.phone_number,
         "full_name": user.full_name,
         "municipality_id": user.municipality_id,
-        "profile_image": user.profile_image,
         "is_active": user.is_active,
         "start_date": user.start_date,
-        "roles": str(roles)
+        "providers": user.providers,
+        "roles": user.roles
     }
 
 # Actualizar un usuario
@@ -54,9 +51,6 @@ def update_user(user: UserSchemaUpdate, db: Session = Depends(get_db), current_u
     db.commit()
     db.refresh(existing_user)
     
-    # Convertir los roles a una lista de cadenas
-    roles = [role.role.name for role in existing_user.roles] if existing_user.roles else []
-    
     # Retornar el usuario actualizado con los roles transformados
     return {
         "id": existing_user.id,
@@ -64,10 +58,10 @@ def update_user(user: UserSchemaUpdate, db: Session = Depends(get_db), current_u
         "phone_number": existing_user.phone_number,
         "full_name": existing_user.full_name,
         "municipality_id": existing_user.municipality_id,
-        "profile_image": existing_user.profile_image,
         "is_active": existing_user.is_active,
         "start_date": existing_user.start_date,
-        "roles": str(roles)
+        "providers": existing_user.providers,
+        "roles": existing_user.roles
     }
 
 

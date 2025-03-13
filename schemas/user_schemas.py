@@ -20,45 +20,14 @@ class UserSchemaUpdate(BaseModel):
     phone_number: Optional[str] = None
     full_name: Optional[str] = None
     hashed_password: Optional[str] = None
+    providers: Optional[List[str]] = None
 
 # Esquema de respuesta para usuarios
 class UserSchemaResponse(UserSchemaBase):
     id: UUID4
     start_date: datetime
-    roles: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-# Esquema base para roles
-class RoleSchemaBase(BaseModel):
-    name: str
-
-# Esquema para la creación de roles
-class RoleSchemaCreate(RoleSchemaBase):
-    pass
-
-# Esquema de respuesta para roles
-class RoleSchemaResponse(RoleSchemaBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-# Esquema base para la asociación de roles de usuario
-class UserRoleAssociationSchemaBase(BaseModel):
-    user_id: UUID4
-    role_id: int
-    assigned_at: Optional[datetime] = None
-
-# Esquema para la creación de la asociación de roles de usuario
-class UserRoleAssociationSchemaCreate(UserRoleAssociationSchemaBase):
-    pass
-
-
-# Esquema de respuesta para la asociación de roles de usuario
-class UserRoleAssociationSchemaResponse(UserRoleAssociationSchemaBase):
-    id: UUID4
+    providers: List[str]
+    roles: List[str]
 
     class Config:
         from_attributes = True
@@ -88,7 +57,7 @@ class AddressSchemaResponse(AddressSchemaBase):
     id: int
 
     class Config:
-        from_attributes = True
+        from_attributes = True  # Habilitar ORM para direcciones
 
 # Esquema base para municipios
 class MunicipalitySchemaBase(BaseModel):
@@ -100,7 +69,7 @@ class MunicipalitySchemaResponse(MunicipalitySchemaBase):
     id: int
 
     class Config:
-        from_attributes = True
+        from_attributes = True  # Habilitar ORM para municipios
 
 # Esquema base para departamentos
 class DepartmentSchemaBase(BaseModel):
@@ -111,4 +80,4 @@ class DepartmentSchemaResponse(DepartmentSchemaBase):
     id: int
 
     class Config:
-        from_attributes = True
+        from_attributes = True  # Habilitar ORM para departamentos

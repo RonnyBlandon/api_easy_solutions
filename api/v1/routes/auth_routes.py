@@ -4,11 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from schemas.auth_schemas import GoogleSignInRequest, SignInRequest, RefreshToken, Token, PasswordResetRequest
+from schemas.auth_schemas import GoogleSignInRequest, GoogleSignInResponse, SignInRequest, RefreshToken, Token, PasswordResetRequest
 from schemas.user_schemas import UserSchemaCreate
 from core.config import get_secret
-from database.models.users_model import User
-from database.models.cart_model import Cart
+from database.models.users_model import AuthProviderEnum, User
 from database.session import get_db  # Para interactuar con la base de datos
 from sqlalchemy.orm import Session
 from utils.email_utils import send_email
@@ -36,18 +35,18 @@ def oauth2_sign_in(data: OAuth2PasswordRequestForm = Depends(), db: Session = De
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Obtener todos los roles del usuario desde la relación con UserRoleAssociation y Role
-    roles = [role_association.role.name for role_association in user.roles]
+    # Convertir los roles a sus valores (o nombres) antes de crear el token
+    roles = [role.value for role in user.roles]
 
-    access_token = create_access_token(data={"id": str(user.id), "role": str(roles)})
-    refresh_token = create_refresh_token(data={"id": str(user.id), "role": str(roles)})
+    access_token = create_access_token(data={"id": str(user.id), "roles": roles})
+    refresh_token = create_refresh_token(data={"id": str(user.id), "roles": roles})
 
     return {
         "local_id": str(user.id),
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "roles": str(roles)
+        "roles": user.roles
     }
 
 # Endpoint para iniciar sesión
@@ -62,18 +61,18 @@ def sign_in(data: SignInRequest, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Obtener todos los roles del usuario desde la relación con UserRoleAssociation y Role
-    roles = [role_association.role.name for role_association in user.roles]
+    # Convertir los roles a sus valores (o nombres) antes de crear el token
+    roles = [role.value for role in user.roles]
 
-    access_token = create_access_token(data={"id": str(user.id), "role": str(roles)})
-    refresh_token = create_refresh_token(data={"id": str(user.id), "role": str(roles)})
+    access_token = create_access_token(data={"id": str(user.id), "roles": roles})
+    refresh_token = create_refresh_token(data={"id": str(user.id), "roles": roles})
 
     return {
         "local_id": str(user.id),
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "roles": str(roles)
+        "roles": user.roles
     }
 
 # Endpoint para registrar un nuevo usuario
@@ -85,9 +84,8 @@ def sign_up(user_data: UserSchemaCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El usuario ya está registrado"
         )
-
     # Validación del telefono
-    validate_phone_number(user.phone_number)
+    validate_phone_number(user_data.phone_number)
 
     # Validación de la contraseña
     if len(user_data.password) < 8:
@@ -102,24 +100,26 @@ def sign_up(user_data: UserSchemaCreate, db: Session = Depends(get_db)):
         phone_number=user_data.phone_number,
         full_name=user_data.full_name,
         municipality_id=user_data.municipality_id,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        providers=['EMAIL'],
+        roles=["USER"]
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     # Obtener todos los roles del usuario desde la relación con UserRoleAssociation y Role
-    roles = [role_association.role.name for role_association in new_user.roles]
+    roles = [role.value for role in user.roles]
 
-    access_token = create_access_token(data={"id": str(new_user.id), "role": str(roles)})
-    refresh_token = create_refresh_token(data={"id": str(new_user.id), "role": str(roles)})
+    access_token = create_access_token(data={"id": str(new_user.id), "roles": roles})
+    refresh_token = create_refresh_token(data={"id": str(new_user.id), "roles": roles})
 
     return {
         "local_id": str(new_user.id),
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "roles": str(roles)
+        "roles": user.roles
     }
 
 # Endpoint para renovar el access token usando el refresh token
@@ -135,17 +135,17 @@ def refresh_token(refresh_token: RefreshToken, db: Session = Depends(get_db)):
         )
 
     # Obtener todos los roles del usuario desde la relación con UserRoleAssociation y Role
-    roles = [role_association.role.name for role_association in user.roles]
+    roles = [role.value for role in user.roles]
 
-    access_token = create_access_token(data={"id": str(user.id), "role": str(roles)})
-    new_refresh_token = create_refresh_token(data={"id": str(user.id), "role": str(roles)})
+    access_token = create_access_token(data={"id": str(user.id), "roles": roles})
+    new_refresh_token = create_refresh_token(data={"id": str(user.id), "roles": roles})
 
     return {
         "local_id": str(user.id),
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": new_refresh_token,
-        "roles": str(roles)
+        "roles": user.roles
     }
 
 # Endpoint para solicitar recuperación de contraseña
@@ -160,12 +160,13 @@ def request_password_reset(request: PasswordResetRequest, db: Session = Depends(
     reset_link = f"http://192.168.0.3:8000/auth/reset-password-form?token={token}"
 
     # Crea el contenido del correo
-    email_subject = "Recuperación de contraseña"
+    email_subject = "Gestión de contraseña"
+
     email_content = f"""
     <p>Hola {user.full_name},</p>
-    <p>Parece que solicitaste la recuperación de tu contraseña. Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
-    <p><a href="{reset_link}">Restablecer Contraseña</a></p>
-    <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
+    <p>Has solicitado actualizar tu contraseña. Haz clic en el siguiente enlace para continuar con el proceso:</p>
+    <p><a href="{reset_link}">Cambiar Contraseña</a></p>
+    <p>Este enlace es válido por 15 minutos. Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
     """
 
     # Envía el correo electrónico
@@ -211,7 +212,7 @@ async def reset_password(
     return templates.TemplateResponse("password_updated.html", {"request": request, "msg": "Contraseña actualizada exitosamente"})
 
 # Endpoint de GoogleSignIn
-@router.post("/googleSignIn")
+@router.post("/googleSignIn", response_model=GoogleSignInResponse)
 def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
     # Verifica que el access_token esté presente
     if not request.access_token:
@@ -230,16 +231,15 @@ def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
     user_info = response.json()
     
     # Extraer información del usuario desde el token
-    google_user_id = user_info["sub"]
     email = user_info["email"]
     name = user_info.get("name", "Usuario de Google")
 
     # Verificar si el usuario ya existe en la base de datos
     user = db.query(User).filter(User.email == email).first()
     if user:
-        # Si el usuario existe pero no tiene google_user_id, actualízalo
-        if not user.google_user_id:
-            user.google_user_id = google_user_id
+        # Agregar GOOGLE al array de providers si no está presente
+        if AuthProviderEnum.GOOGLE not in user.providers:
+            user.providers.append(AuthProviderEnum.GOOGLE)
             db.commit()
             db.refresh(user)
     else:
@@ -251,27 +251,19 @@ def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
             department_id=1,
             municipality_id=1,
             is_active=True,
-            google_user_id=google_user_id,
-            role="USER"  # Asigna el rol correspondiente
+            providers=['GOOGLE'],
+            roles=["USER"]
         )
         db.add(user)
         db.commit()
         db.refresh(user)
 
-        # Crear carrito al usuario
-        if not user.cart:
-            # Crear carrito si no existe
-            new_cart = Cart(user_id=user.id)
-            db.add(new_cart)
-            db.commit()
-            db.refresh(new_cart)
-
     # Obtener todos los roles del usuario desde la relación con UserRoleAssociation y Role
-    roles = [role_association.role.name for role_association in user.roles]
+    roles = [role.value for role in user.roles]
 
     # Crear tokens de acceso y actualización para el usuario
-    access_token = create_access_token(data={"id": str(user.id), "role": str(roles)})
-    refresh_token = create_refresh_token(data={"id": str(user.id), "role": str(roles)})
+    access_token = create_access_token(data={"id": str(user.id), "roles": roles})
+    refresh_token = create_refresh_token(data={"id": str(user.id), "roles": roles})
 
     return {
         "local_id": str(user.id),
@@ -282,5 +274,6 @@ def google_sign_in(request: GoogleSignInRequest, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "refresh_token": refresh_token,
-        "roles": str(roles)
+        "providers": user.providers,
+        "roles": user.roles
     }
