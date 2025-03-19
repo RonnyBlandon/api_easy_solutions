@@ -37,6 +37,7 @@ class User(Base):
     business_admin_profile = relationship("BusinessAdmin", back_populates="user", uselist=False)
     favourites = relationship("Favourite", back_populates="user")
     cart = relationship("Cart", back_populates="user")
+    payment_methods = relationship("PaymentMethod", back_populates="user")
 
 # Tabla para drivers (conductores)
 class Driver(Base):

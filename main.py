@@ -7,6 +7,7 @@ from api.v1.routes.favourite_routes import router as favourites_router
 from api.v1.routes.category_routes import router as categories_router
 from api.v1.routes.product_routes import router as products_router
 from api.v1.routes.cart_routes import router as cart_router
+from api.v1.routes.payment_methods_routes import router as payment_methods_router
 from api.v1.routes.order_routes import router as order_router
 from database.session import init_db
 # import models
@@ -15,6 +16,7 @@ from database.models.business_model import TypeBusiness, Business
 from database.models.product_model import Category, CategoryProductAssociation, Product, Option, Extra
 from database.models.favourite_model import Favourite
 from database.models.cart_model import Cart, CartItem
+from database.models.payment_method_model import PaymentMethod
 from database.models.order_model import Order, OrderItem
 from database.models.invoice_model import BusinessInvoice
 
@@ -39,6 +41,7 @@ app.include_router(categories_router)
 app.include_router(products_router)
 app.include_router(favourites_router)
 app.include_router(cart_router)
+app.include_router(payment_methods_router)
 app.include_router(order_router)
 
 @app.get("/")
