@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from uuid import UUID
 from core.security import get_current_active_user
@@ -9,14 +9,33 @@ from schemas.payment_method_schemas import PaymentMethodCreate, PaymentMethodUpd
 
 router = APIRouter(prefix="/payment_methods", tags=["Payment Methods"])
 
-@router.post("/", response_model=PaymentMethodResponse)
-def add_payment_method(payment_data: PaymentMethodCreate, db: Session = Depends(get_db), current_user: TokenData = Depends(get_current_active_user)):
+# Crear un nuevo metodo de pago
+@router.post("/", response_model=PaymentMethodResponse, status_code=status.HTTP_201_CREATED)
+def add_payment_method(
+    payment_data: PaymentMethodCreate, 
+    db: Session = Depends(get_db), 
+    current_user: TokenData = Depends(get_current_active_user)
+):
     user_id = current_user.local_id
-    new_payment = PaymentMethod(**payment_data.model_dump(), user_id=user_id)
+
+    # Verificar si el usuario ya tiene métodos de pago registrados
+    existing_payments = db.query(PaymentMethod).filter(
+        PaymentMethod.user_id == user_id
+    ).count()
+
+    payment_dict = payment_data.model_dump()
+
+    # Si no tiene métodos de pago previos, establecer is_main en True
+    if existing_payments == 0:
+        payment_dict["is_main_payment_method"] = True
+
+    new_payment = PaymentMethod(**payment_dict, user_id=user_id)
     db.add(new_payment)
     db.commit()
     db.refresh(new_payment)
+
     return new_payment
+
 
 @router.get("/", response_model=PaymentMethodListResponse)
 def list_payment_methods(

@@ -13,7 +13,6 @@ class PaymentMethod(Base):
     card_number = Column(String, nullable=False)
     month_and_year = Column(String, nullable=False)
     cvc = Column(String, nullable=False)
-    card_alias = Column(String, nullable=True)
     is_main_payment_method = Column(Boolean, default=False, nullable=False)
     card_provider = Column(String, nullable=True)  # Ejemplo: 'Visa', 'MasterCard', 'Banco XYZ'
 

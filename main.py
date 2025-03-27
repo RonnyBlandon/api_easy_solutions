@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.v1.routes.auth_routes import router as auth_routes
 from api.v1.routes.user_routes import router as users_routes
+from api.v1.routes.address_routes import router as address_routes
 from api.v1.routes.business_routes import router as business_routes
 from api.v1.routes.favourite_routes import router as favourites_router
 from api.v1.routes.category_routes import router as categories_router
@@ -11,7 +12,8 @@ from api.v1.routes.payment_methods_routes import router as payment_methods_route
 from api.v1.routes.order_routes import router as order_router
 from database.session import init_db
 # import models
-from database.models.users_model import User, Driver, BusinessAdmin, Address, Department, Municipality
+from database.models.users_model import User, Driver, BusinessAdmin
+from database.models.address_model import Address, Department, Municipality
 from database.models.business_model import TypeBusiness, Business
 from database.models.product_model import Category, CategoryProductAssociation, Product, Option, Extra
 from database.models.favourite_model import Favourite
@@ -36,6 +38,7 @@ app.add_middleware(
 # Registrar las rutas de autenticación
 app.include_router(auth_routes)
 app.include_router(users_routes)
+app.include_router(address_routes)
 app.include_router(business_routes)
 app.include_router(categories_router)
 app.include_router(products_router)

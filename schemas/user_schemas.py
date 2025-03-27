@@ -20,6 +20,7 @@ class UserSchemaUpdate(BaseModel):
     phone_number: Optional[str] = None
     full_name: Optional[str] = None
     hashed_password: Optional[str] = None
+    municipality_id: Optional[int] = None
     providers: Optional[List[str]] = None
 
 # Esquema de respuesta para usuarios
@@ -31,53 +32,3 @@ class UserSchemaResponse(UserSchemaBase):
 
     class Config:
         from_attributes = True
-
-# Esquema base para direcciones
-class AddressSchemaBase(BaseModel):
-    address_type: str
-    street_address: str
-    latitude: Optional[str] = None
-    longitude: Optional[str] = None
-    municipality_id: int
-
-# Esquema para la creación de direcciones
-class AddressSchemaCreate(AddressSchemaBase):
-    pass
-
-# Esquema para la actualización de direcciones
-class AddressSchemaUpdate(BaseModel):
-    address_type: Optional[str] = None
-    street_address: Optional[str] = None
-    latitude: Optional[str] = None
-    longitude: Optional[str] = None
-    municipality_id: Optional[int] = None
-
-# Esquema de respuesta para direcciones
-class AddressSchemaResponse(AddressSchemaBase):
-    id: int
-
-    class Config:
-        from_attributes = True  # Habilitar ORM para direcciones
-
-# Esquema base para municipios
-class MunicipalitySchemaBase(BaseModel):
-    name: str
-    department_id: int
-
-# Esquema de respuesta para municipios
-class MunicipalitySchemaResponse(MunicipalitySchemaBase):
-    id: int
-
-    class Config:
-        from_attributes = True  # Habilitar ORM para municipios
-
-# Esquema base para departamentos
-class DepartmentSchemaBase(BaseModel):
-    name: str
-
-# Esquema de respuesta para departamentos
-class DepartmentSchemaResponse(DepartmentSchemaBase):
-    id: int
-
-    class Config:
-        from_attributes = True  # Habilitar ORM para departamentos

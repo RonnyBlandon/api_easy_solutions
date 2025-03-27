@@ -21,7 +21,6 @@ class TypeBusiness(Base):
     __tablename__ = 'type_business'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
-    businesses = relationship("Business", back_populates="type_business")
     image_url = Column(String, nullable=False)  # URL de la imagen
     # Relaciones 
     businesses = relationship("Business", back_populates="type_business")
